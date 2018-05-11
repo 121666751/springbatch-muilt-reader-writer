@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:batch="http://www.springframework.org/schema/batch"
+    xmlns:task="http://www.springframework.org/schema/task"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/batch
+    http://www.springframework.org/schema/batch/spring-batch-2.2.xsd
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+    <bean
+        class="org.springframework.batch.core.configuration.support.JobRegistryBeanPostProcessor">
+        <property name="jobRegistry" ref="jobRegistry" />
+    </bean>
+
+    <bean id="jobRegistry"
+        class="org.springframework.batch.core.configuration.support.MapJobRegistry" />
+        
+    <!-- run every 10 seconds -->
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <bean id="cronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+                <property name="jobDetail" ref="jobDetail" />
+                <property name="cronExpression" value="0 */1 * * * ?" />
+            </bean>
+        </property>
+  </bean>
+
+    <bean id="jobDetail" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass" value="cn.ledaikuan.ldkbatch.quartz.QuartzJobLauncher" />
+        <property name="group" value="quartz-batch" />
+        <property name="jobDataAsMap">
+            <map>
+                <entry key="jobName" value="userInfoJob" />
+                <entry key="jobLocator" value-ref="jobRegistry" />
+                <entry key="jobLauncher" value-ref="jobLauncher" />
+                <entry key="dayTime" value="2017-08-22%" />
+            </map>
+        </property>
+    </bean>
+
+    <bean id="pagingItemReader"
+        class="org.springframework.batch.item.database.JdbcPagingItemReader"
+        scope="step">
+        <property name="dataSource" ref="dataSource" />
+        <property name="queryProvider">
+            <bean
+                class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+                <property name="dataSource" ref="dataSource" />
+                <property name="selectClause" value="select u.registerTime as 'registerTime',u.mobileNo as 'mobileNo',u.resultStatus as 'resultStatus',u.channel as 'channel',
+       ui.idNo as 'idNo',ui.customerName as 'customerName',ui.idApplyStatus as 'idApplyStatus',ui.debitCardNo as 'debitCardNo',ui.openBank as 'openBank',ui.debitCardPhoneNo as 'debitCardPhoneNo',
+       ui.prov as 'prov',ui.city as 'city',ui.homeAddr1 as 'homeAddr1',ui.homeAddr2 as 'homeAddr2',ui.homeAddr3 as 'homeAddr3',ui.homeAddr4 as 'homeAddr4',ui.jobUnit as 'jobUnit',
+       ui.unitAddr1 as 'unitAddr1',ui.unitAddr2 as 'unitAddr2',ui.unitAddr3 as 'unitAddr3',ui.unitAddr4 as 'unitAddr4'" />
+                <property name="fromClause" value="from loans_user as u INNER JOIN loans_userinfo as ui on u.customerId = ui.customerId " />
+                <property name="whereClause" value="where u.registerTime like :dayTime " />
+                <property name="sortKey" value="u.registerTime" />
+            </bean>
+        </property>
+        <property name="parameterValues">
+            <map>
+                <entry key="dayTime" value="#{jobParameters['dayTime']}" />
+            </map>
+        </property>
+        <property name="pageSize" value="10" />
+        <!-- <property name="maxItemCount" value="10" /> -->
+        <property name="rowMapper">
+            <bean class="cn.ledaikuan.ldkbatch.mapper.UserInfoMapper" />
+        </property>
+    </bean>
+    
+    <bean id="userInfoProcessor"
+        class="cn.ledaikuan.ldkbatch.processor.UserInfoProcessor"/>
+        
+    <bean id="userInfoItemWriter"
+        class="cn.ledaikuan.ldkbatch.writer.UserInfoItemWriter"/>
+        
+    
+    
+    <job id="userInfoJob" xmlns="http://www.springframework.org/schema/batch">
+        <step id="step">
+            <tasklet>
+                <chunk reader="pagingItemReader" processor="userInfoProcessor" writer="userInfoItemWriter"
+                    commit-interval="5" />
+            </tasklet>
+        </step>
+    </job>
+</beans>

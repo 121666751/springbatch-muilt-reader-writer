@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:batch="http://www.springframework.org/schema/batch"
+    xmlns:task="http://www.springframework.org/schema/task"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/batch
+    http://www.springframework.org/schema/batch/spring-batch-2.2.xsd
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+    
+    <bean id="APagingItemReader"
+        class="org.springframework.batch.item.database.JdbcPagingItemReader"
+        scope="step">
+        <property name="dataSource" ref="dataSource" />
+        <property name="queryProvider">
+            <bean
+                class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+                <property name="dataSource" ref="dataSource" />
+                <property name="selectClause" value="select customerId,mobileNo,totalLoanAmt,nextPayDate,baseTotCreLine,baseRestCreLine " />
+                <property name="fromClause" value="from loans_loanacctinfo" />
+                <property name="whereClause" value="where totalLoanAmt = 0 and nextPayDate > :ANextPayDate" />
+                <property name="sortKey" value="customerId" />
+            </bean>
+        </property>
+        <property name="parameterValues">
+            <map>
+                <entry key="ANextPayDate" value="#{jobParameters['ANextPayDate']}" />
+            </map>
+        </property>
+        <property name="pageSize" value="100" />
+        <!-- <property name="maxItemCount" value="10" /> -->
+        <property name="rowMapper">
+            <bean class="cn.ledaikuan.ldkbatch.mapper.CashBackUserMapper" />
+        </property>
+    </bean>
+    
+    <bean id="BPagingItemReader"
+        class="org.springframework.batch.item.database.JdbcPagingItemReader"
+        scope="step">
+        <property name="dataSource" ref="dataSource" />
+        <property name="queryProvider">
+            <bean
+                class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+                <property name="dataSource" ref="dataSource" />
+                <property name="selectClause" value="select l.customerId as 'customerId' ,l.mobileNo as 'mobileNo',l.totalLoanAmt as 'totalLoanAmt',l.nextPayDate as 'nextPayDate' ,l.baseTotCreLine as 'baseTotCreLine',l.baseRestCreLine as 'baseRestCreLine' " />
+                <property name="fromClause" value="from loans_loanacctinfo as l INNER JOIN loans_acctstatus as a on l.customerId = a.customerId" />
+                <property name="whereClause" value="where a.loanApproveDate BETWEEN :BloanApproveStartDate and :BloanApproveEndDate and ISNULL(l.nextPayDate)" />
+                <property name="sortKey" value="l.customerId" />
+            </bean>
+        </property>
+        <property name="parameterValues">
+            <map>
+                <entry key="BloanApproveStartDate" value="#{jobParameters['BloanApproveStartDate']}" />
+                <entry key="BloanApproveEndDate" value="#{jobParameters['BloanApproveEndDate']}" />
+            </map>
+        </property>
+        <property name="pageSize" value="100" />
+        <!-- <property name="maxItemCount" value="10" /> -->
+        <property name="rowMapper">
+            <bean class="cn.ledaikuan.ldkbatch.mapper.CashBackUserMapper" />
+        </property>
+    </bean>
+    
+    <bean id="CPagingItemReader"
+        class="org.springframework.batch.item.database.JdbcPagingItemReader"
+        scope="step">
+        <property name="dataSource" ref="dataSource" />
+        <property name="queryProvider">
+            <bean
+                class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+                <property name="dataSource" ref="dataSource" />
+                <property name="selectClause" value="select customerId,mobileNo,totalLoanAmt,nextPayDate,baseTotCreLine,baseRestCreLine " />
+                <property name="fromClause" value="from loans_loanacctinfo" />
+                <property name="whereClause" value="where totalLoanAmt >0  and baseRestCreLine > (2*baseTotCreLine /3) and nextPayDate > :CNextPayDate" />
+                <property name="sortKey" value="customerId" />
+            </bean>
+        </property>
+        <property name="parameterValues">
+            <map>
+                <entry key="CNextPayDate" value="#{jobParameters['CNextPayDate']}" />
+            </map>
+        </property>
+        <property name="pageSize" value="100" />
+        <!-- <property name="maxItemCount" value="10" /> -->
+        <property name="rowMapper">
+            <bean class="cn.ledaikuan.ldkbatch.mapper.CashBackUserMapper" />
+        </property>
+    </bean>
+    
+    <bean id="testPagingItemReader"
+        class="org.springframework.batch.item.database.JdbcPagingItemReader"
+        scope="step">
+        <property name="dataSource" ref="dataSource" />
+        <property name="queryProvider">
+            <bean
+                class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+                <property name="dataSource" ref="dataSource" />
+                <property name="selectClause" value="select customerId,mobileNo,totalLoanAmt,nextPayDate,baseTotCreLine,baseRestCreLine " />
+                <property name="fromClause" value=" from loans_loanacctinfo " />
+                <property name="whereClause" value="where customerId = :testCustomerId" />
+                <property name="sortKey" value="customerId" />
+            </bean>
+        </property>
+        <property name="parameterValues">
+            <map>
+                <entry key="testCustomerId" value="#{jobParameters['testCustomerId']}" />
+            </map>
+        </property>
+        <property name="pageSize" value="1" />
+        <property name="maxItemCount" value="1" />
+        <property name="rowMapper">
+            <bean class="cn.ledaikuan.ldkbatch.mapper.CashBackUserMapper" />
+        </property>
+    </bean>
+    
+    <bean id="cashBackProcessor"
+        class="cn.ledaikuan.ldkbatch.processor.CashBackProcessor"/>
+        
+    <bean id="cashBackItemWriter"
+        class="cn.ledaikuan.ldkbatch.writer.CashBackItemWriter"/>
+        
+    
+    
+  <job id="testJob" xmlns="http://www.springframework.org/schema/batch">
+    <!-- <step id="stepTest">
+      <tasklet>
+        <chunk reader="testPagingItemReader" processor="cashBackProcessor" writer="cashBackItemWriter"
+            commit-interval="1" />
+      </tasklet>
+    </step>
+    <step id="stepA" next="stepB">
+      <tasklet>
+        <chunk reader="APagingItemReader" processor="cashBackProcessor" writer="cashBackItemWriter"
+            commit-interval="10" />
+      </tasklet>
+    </step> -->
+    <step id="stepB" next="stepC">
+      <tasklet>
+        <chunk reader="BPagingItemReader" processor="cashBackProcessor" writer="cashBackItemWriter"
+            commit-interval="10" />
+      </tasklet>
+    </step>
+    <step id="stepC">
+      <tasklet>
+        <chunk reader="CPagingItemReader" processor="cashBackProcessor" writer="cashBackItemWriter"
+            commit-interval="10" />
+      </tasklet>
+    </step>
+  </job>
+</beans>

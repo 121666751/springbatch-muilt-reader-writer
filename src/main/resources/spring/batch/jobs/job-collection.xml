@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:batch="http://www.springframework.org/schema/batch"
+    xmlns:task="http://www.springframework.org/schema/task"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/batch
+    http://www.springframework.org/schema/batch/spring-batch-2.2.xsd
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+        
+    <bean id="pagingItemReader"
+        class="org.springframework.batch.item.database.JdbcPagingItemReader"
+        scope="step">
+        <property name="dataSource" ref="dataSource" />
+        <property name="queryProvider">
+            <bean
+                class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+                <property name="dataSource" ref="dataSource" />
+                <property name="selectClause" value="select applicationId,customerId " />
+                <property name="fromClause" value="from loans_user " />
+                <property name="whereClause" value=" where tag = :tag and registerTime BETWEEN :startTime and :endTime" />
+                <property name="sortKey" value="customerId" />
+            </bean>
+        </property>
+        <property name="parameterValues">
+            <map>
+                <entry key="tag" value="#{jobParameters['tag']}" />
+                <entry key="startTime" value="#{jobParameters['startTime']}" />
+                <entry key="endTime" value="#{jobParameters['endTime']}" />
+            </map>
+        </property>
+        <property name="pageSize" value="10" />
+        <!-- <property name="maxItemCount" value="10" /> -->
+        <property name="rowMapper">
+            <bean class="cn.ledaikuan.ldkbatch.mapper.CollectionItemReaderMapper" />
+        </property>
+    </bean>
+    
+    <bean id="collectionProcessor"
+        class="cn.ledaikuan.ldkbatch.processor.CollectionProcessor"/>
+        
+    <bean id="collectionItemWriter"
+        class="cn.ledaikuan.ldkbatch.writer.CollectionItemWriter">
+        <property name="cvsContactFileItemWriter" ref="cvsContactFileItemWriter" />
+        <property name="cvsCallLogFileItemWriter" ref="cvsCallLogFileItemWriter" />
+        <property name="cvsAppFileItemWriter" ref="cvsAppFileItemWriter" />
+        <property name="cvsLocationFileItemWriter" ref="cvsLocationFileItemWriter" />
+        <!-- <property name="delegates">
+            <list>
+                <ref bean="cvsContactFileItemWriter" />
+                <ref bean="cvsCallLogFileItemWriter" />
+            </list>
+        </property> -->
+    </bean>
+        
+    <job id="collectionJob" xmlns="http://www.springframework.org/schema/batch">
+        <step id="step">
+            <tasklet>
+                <chunk reader="pagingItemReader" processor="collectionProcessor" writer="collectionItemWriter"
+                    commit-interval="1" >
+                    <streams>
+                        <stream ref="cvsContactFileItemWriter" />
+                        <stream ref="cvsCallLogFileItemWriter" />
+                        <stream ref="cvsAppFileItemWriter" />
+                        <stream ref="cvsLocationFileItemWriter" />
+                </streams>
+                </chunk>
+            </tasklet>
+        </step>
+    </job>
+    
+    <bean id="cvsContactFileItemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"  scope="step">
+        <!-- write to this csv file -->
+        <property name="resource" value="file:/cvs/201702/phone_list_201702.csv" />
+        <property name="shouldDeleteIfExists" value="true" />
+        <!-- <property name="append" value="true" /> -->
+
+        <property name="lineAggregator">
+            <bean
+                class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+                <property name="delimiter" value="," />
+                <property name="fieldExtractor">
+                    <bean
+                        class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                        <property name="names" value="APP_ID, name, number, create_time" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+    
+    <bean id="cvsCallLogFileItemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"  scope="step" >
+        <!-- write to this csv file -->
+        <property name="resource" value="file:/cvs/201702/call_log_201702.csv" />
+        <property name="shouldDeleteIfExists" value="true" />
+        <!-- <property name="append" value="true" /> -->
+
+        <property name="lineAggregator">
+            <bean
+                class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+                <property name="delimiter" value="," />
+                <property name="fieldExtractor">
+                    <bean
+                        class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                        <property name="names" value="APP_ID, name, number, call_type , date ,create_time" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+    
+    <bean id="cvsAppFileItemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"  scope="step" >
+        <!-- write to this csv file -->
+        <property name="resource" value="file:/cvs/201702/app_list_201702.csv" />
+        <property name="shouldDeleteIfExists" value="true" />
+        <!-- <property name="append" value="true" /> -->
+
+        <property name="lineAggregator">
+            <bean
+                class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+                <property name="delimiter" value="," />
+                <property name="fieldExtractor">
+                    <bean
+                        class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                        <property name="names" value="APP_ID, APPNAME, APPVERSION, create_time" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+    
+    <bean id="cvsLocationFileItemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"  scope="step" >
+        <!-- write to this csv file -->
+        <property name="resource" value="file:/cvs/201702/location_list_201702.csv" />
+        <property name="shouldDeleteIfExists" value="true" />
+        <!-- <property name="append" value="true" /> -->
+
+        <property name="lineAggregator">
+            <bean
+                class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+                <property name="delimiter" value="," />
+                <property name="fieldExtractor">
+                    <bean
+                        class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                        <property name="names" value="APP_ID, longitude, latitude, geoCity, addr ,time" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+</beans>

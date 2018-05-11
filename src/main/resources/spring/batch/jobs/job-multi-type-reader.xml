@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:batch="http://www.springframework.org/schema/batch"
+    xmlns:task="http://www.springframework.org/schema/task"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/batch
+    http://www.springframework.org/schema/batch/spring-batch-2.2.xsd
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+    <!-- 不同格式数据的文件读取 -->
+    <bean id="multiTypesItemReader"
+        class="org.springframework.batch.item.file.FlatFileItemReader" scope="step">
+        <property name="resource"
+            value="file:#{jobParameters['inputFilePath']}" />
+        <property name="lineMapper">
+            <bean
+                class="org.springframework.batch.item.file.mapping.PatternMatchingCompositeLineMapper">
+                <property name="tokenizers">
+                    <map>
+                        <entry key="student*" value-ref="studentTokenizer" />
+                        <entry key="goods*" value-ref="goodsTokenizer" />
+                    </map>
+                </property>
+                <property name="fieldSetMappers">
+                    <map>
+                        <entry key="student*" value-ref="studentFieldSetMapper" />
+                        <entry key="goods*" value-ref="goodsFieldSetMapper" />
+                    </map>
+                </property>
+            </bean>
+        </property>
+    </bean>
+    <bean id="studentTokenizer"
+        class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+        <property name="delimiter" value="," />
+        <property name="names">
+            <list>
+                <value>student</value>
+                <value>ID</value>
+                <value>name</value>
+                <value>age</value>
+                <value>score</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="studentFieldSetMapper"
+        class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+        <property name="prototypeBeanName" value="student" />
+        <property name="distanceLimit" value="100" />
+    </bean>
+    <!-- 学生Pojo类 -->
+    <bean id="student"
+        class="cn.ledaikuan.ldkbatch.model.Student"
+        scope="prototype" />
+
+    <bean id="goodsTokenizer"
+        class="org.springframework.batch.item.file.transform.FixedLengthTokenizer">
+        <property name="columns" value="6-13,14-17,18-22,23-32,33-" />
+        <property name="names"
+            value="isin,quantity,price,customer,buyDay" />
+    </bean>
+    <bean id="goodsFieldSetMapper"
+        class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+        <property name="prototypeBeanName" value="goods" />
+    </bean>
+    <!-- 商品Pojo类 -->
+    <bean id="goods"
+        class="cn.ledaikuan.ldkbatch.model.Goods"
+        scope="prototype" />
+    
+    <bean id="multiTypesItemWriter"
+        class="cn.ledaikuan.ldkbatch.writer.MultiItemWriter">
+        <property name="delegates">
+            <list>
+                <ref bean="studentWriter" />
+                <ref bean="goodsWriter" />
+            </list>
+        </property>
+    </bean>
+    
+    <!-- 学生信息的写 -->
+    <bean id="studentWriter"
+        class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+        <property name="resource"
+            value="file:#{jobParameters['outputFilePathStudent']}" />
+        <property name="lineAggregator">
+            <bean
+                class="org.springframework.batch.item.file.transform.FormatterLineAggregator">
+                <property name="fieldExtractor">
+                    <bean
+                        class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                        <property name="names" value="ID,name,age,score" />
+                    </bean>
+                </property>
+                <property name="format" value="大家好，我学号：%s叫：%s，今年：%s岁得分：%s分" />
+            </bean>
+        </property>
+    </bean>
+    <!-- 商品信息的写 -->
+    <bean id="goodsWriter"
+        class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+        <property name="resource"
+            value="file:#{jobParameters['outputFilePathGoods']}" />
+        <property name="lineAggregator">
+            <bean
+                class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+                <property name="fieldExtractor">
+                    <bean
+                        class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                        <property name="names"
+                            value="isin,quantity,price,customer,buyDay" />
+                    </bean>
+                </property>
+            </bean>
+        </property>
+    </bean>
+    
+    <job id="multiTypeSingleFileJob" xmlns="http://www.springframework.org/schema/batch">
+        <step id="xmlFileReadAndWriterStep">
+            <tasklet>
+                <chunk reader="multiTypesItemReader" writer="multiTypesItemWriter"
+                    commit-interval="1">
+                    <streams>
+                        <stream ref="studentWriter" />
+                        <stream ref="goodsWriter" />
+                    </streams>
+                </chunk>
+            </tasklet>
+        </step>
+    </job>
+</beans>
