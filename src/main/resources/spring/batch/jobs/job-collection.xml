@@ -71,7 +71,7 @@
     
     <bean id="cvsContactFileItemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"  scope="step">
         <!-- write to this csv file -->
-        <property name="resource" value="file:/cvs/201702/phone_list_201702.csv" />
+        <property name="resource" value="file:#{jobParameters['contactFile']}" />
         <property name="shouldDeleteIfExists" value="true" />
         <!-- <property name="append" value="true" /> -->
 
@@ -91,7 +91,7 @@
     
     <bean id="cvsCallLogFileItemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"  scope="step" >
         <!-- write to this csv file -->
-        <property name="resource" value="file:/cvs/201702/call_log_201702.csv" />
+        <property name="resource" value="file:#{jobParameters['callLogFile']}" />
         <property name="shouldDeleteIfExists" value="true" />
         <!-- <property name="append" value="true" /> -->
 
@@ -111,7 +111,7 @@
     
     <bean id="cvsAppFileItemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"  scope="step" >
         <!-- write to this csv file -->
-        <property name="resource" value="file:/cvs/201702/app_list_201702.csv" />
+        <property name="resource" value="file:#{jobParameters['appFile']}" />
         <property name="shouldDeleteIfExists" value="true" />
         <!-- <property name="append" value="true" /> -->
 
@@ -131,7 +131,7 @@
     
     <bean id="cvsLocationFileItemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"  scope="step" >
         <!-- write to this csv file -->
-        <property name="resource" value="file:/cvs/201702/location_list_201702.csv" />
+        <property name="resource" value="file:#{jobParameters['locationFile']}" />
         <property name="shouldDeleteIfExists" value="true" />
         <!-- <property name="append" value="true" /> -->
 

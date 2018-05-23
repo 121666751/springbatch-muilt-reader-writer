@@ -18,7 +18,6 @@ public class App {
     
     protected static Logger logger = LoggerFactory.getLogger(App.class);
     
-    /*
     public static void main( String[] args ){
 
         String[] springConfig  = 
@@ -35,12 +34,25 @@ public class App {
         JobLauncher jobLauncher = (JobLauncher) context.getBean("jobLauncher");
         Job job = (Job) context.getBean("collectionJob");
 
+        String startTime = "2018-03-17 00:00:00";
+        String endTime = "2018-03-18 00:00:00";
+        String contactFile = "/cvs/20180317/phone_list_20180317.csv";
+        String callLogFile = "/cvs/20180317/call_log_20180317.csv";
+        String locationFile = "/cvs/20180317/location_list_20180317.csv";
+        String appFile = "/cvs/20180317/app_list_20180317.csv";
+        
         try {
 
             JobParameters param = new JobParametersBuilder()
                     .addString("tag", "loanacct_tag")
-                    .addString("startTime", "2017-02-01 00:00:00")
-                    .addString("endTime", "2017-03-01 00:00:00")
+                    .addString("startTime", startTime)
+                    .addString("endTime", endTime)
+                    
+                    .addString("contactFile", contactFile)
+                    .addString("callLogFile", callLogFile)
+                    .addString("locationFile", locationFile)
+                    .addString("appFile", appFile)
+                    
                     .toJobParameters();
             JobExecution execution = jobLauncher.run(job, param);
             System.out.println("Exit Status : " + execution.getStatus());
@@ -50,7 +62,37 @@ public class App {
         }
 
         System.out.println("Done");
-    }*/
+        
+        startTime = "2018-03-18 00:00:00";
+        endTime = "2018-03-19 00:00:00";
+        contactFile = "/cvs/20180318/phone_list_20180318.csv";
+        callLogFile = "/cvs/20180318/call_log_20180318.csv";
+        locationFile = "/cvs/20180318/location_list_20180318.csv";
+        appFile = "/cvs/20180318/app_list_20180318.csv";
+        
+        try {
+
+            JobParameters param = new JobParametersBuilder()
+                    .addString("tag", "loanacct_tag")
+                    .addString("startTime", startTime)
+                    .addString("endTime", endTime)
+                    
+                    .addString("contactFile", contactFile)
+                    .addString("callLogFile", callLogFile)
+                    .addString("locationFile", locationFile)
+                    .addString("appFile", appFile)
+                    
+                    .toJobParameters();
+            JobExecution execution = jobLauncher.run(job, param);
+            System.out.println("Exit Status : " + execution.getStatus());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Done");
+        
+    }
     
     /*
     public static void main( String[] args ){
@@ -89,6 +131,7 @@ public class App {
         System.out.println("Done");
     }*/
     
+    /*
     public static void main( String[] args ){
 
         String[] springConfig  = 
@@ -117,7 +160,7 @@ public class App {
         }
 
         System.out.println("Done");
-    }
+    }*/
 
 
     /*

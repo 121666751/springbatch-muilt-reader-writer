@@ -5,6 +5,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +90,7 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
     }
 
     private ArrayList<CollectionContactBean> getCollectionContactArray(String customerId,String applicationId){
+        if(StringUtils.isEmpty(applicationId))return null;
         String getTime = customerId.substring(0, 8);
         ArrayList<CollectionContactBean> resultList = new ArrayList<CollectionContactBean>();
         CollectionContactBean bean ;
@@ -97,8 +100,8 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
             for(Contact20180119 contact:list){
                 bean = new CollectionContactBean();
                 bean.setAPP_ID(applicationId);
-                bean.setName(contact.getName());
-                bean.setNumber(contact.getNumber());
+                bean.setName(filter(contact.getName()));
+                bean.setNumber(filter(contact.getNumber()));
                 bean.setCreate_time(getTime);
                 resultList.add(bean);
             }
@@ -111,8 +114,8 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
             for(Contact20171123 contact:list){
                 bean = new CollectionContactBean();
                 bean.setAPP_ID(applicationId);
-                bean.setName(contact.getName());
-                bean.setNumber(contact.getNumber());
+                bean.setName(filter(contact.getName()));
+                bean.setNumber(filter(contact.getNumber()));
                 bean.setCreate_time(getTime);
                 resultList.add(bean);
             }
@@ -125,8 +128,8 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
             for(Contact20170912 contact:list){
                 bean = new CollectionContactBean();
                 bean.setAPP_ID(applicationId);
-                bean.setName(contact.getName());
-                bean.setNumber(contact.getNumber());
+                bean.setName(filter(contact.getName()));
+                bean.setNumber(filter(contact.getNumber()));
                 bean.setCreate_time(getTime);
                 resultList.add(bean);
             }
@@ -138,8 +141,8 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
         for(Contact contact:list){
             bean = new CollectionContactBean();
             bean.setAPP_ID(applicationId);
-            bean.setName(contact.getName());
-            bean.setNumber(contact.getNumber());
+            bean.setName(filter(contact.getName()));
+            bean.setNumber(filter(contact.getNumber()));
             bean.setCreate_time(getTime);
             resultList.add(bean);
         }
@@ -147,7 +150,7 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
     }
     
     private ArrayList<CollectionCallLogBean> getCollectionCallLogArray(String customerId,String applicationId){
-        
+        if(StringUtils.isEmpty(applicationId))return null;
         String getTime = customerId.substring(0, 8);
         ArrayList<CollectionCallLogBean> resultList = new ArrayList<CollectionCallLogBean>();
         CollectionCallLogBean bean;
@@ -160,8 +163,8 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
                 bean.setCall_type(calllog.getType()+"");
                 bean.setCreate_time(getTime);
                 bean.setDate(calllog.getDate());
-                bean.setName(calllog.getName());
-                bean.setNumber(calllog.getNumber());
+                bean.setName(filter(calllog.getName()));
+                bean.setNumber(filter(calllog.getNumber()));
                 resultList.add(bean);
             }
             
@@ -176,8 +179,8 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
                 bean.setCall_type(calllog.getType()+"");
                 bean.setCreate_time(getTime);
                 bean.setDate(calllog.getDate());
-                bean.setName(calllog.getName());
-                bean.setNumber(calllog.getNumber());
+                bean.setName(filter(calllog.getName()));
+                bean.setNumber(filter(calllog.getNumber()));
                 resultList.add(bean);
             }
             
@@ -192,8 +195,8 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
                 bean.setCall_type(calllog.getType()+"");
                 bean.setCreate_time(getTime);
                 bean.setDate(calllog.getDate());
-                bean.setName(calllog.getName());
-                bean.setNumber(calllog.getNumber());
+                bean.setName(filter(calllog.getName()));
+                bean.setNumber(filter(calllog.getNumber()));
                 resultList.add(bean);
             }
             
@@ -208,8 +211,8 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
             bean.setCall_type(calllog.getType()+"");
             bean.setCreate_time(getTime);
             bean.setDate(calllog.getDate());
-            bean.setName(calllog.getName());
-            bean.setNumber(calllog.getNumber());
+            bean.setName(filter(calllog.getName()));
+            bean.setNumber(filter(calllog.getNumber()));
             resultList.add(bean);
         }
         
@@ -217,6 +220,7 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
     }
     
     private ArrayList<CollectionLocationBean> getCollectionLocationArray(String customerId,String applicationId){
+        if(StringUtils.isEmpty(applicationId))return null;
         ArrayList<CollectionLocationBean> resultList = new ArrayList<CollectionLocationBean>();
         CollectionLocationBean bean;
         ArrayList<Location> list = (ArrayList<Location>) locationService.findAllLocationByCustomerId(customerId);
@@ -236,6 +240,7 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
     }
     
     private ArrayList<CollectionAppBean> getCollectionAppBeanArray(String customerId,String applicationId){
+        if(StringUtils.isEmpty(applicationId))return null;
         ArrayList<CollectionAppBean> resultList = new ArrayList<CollectionAppBean>();
         CollectionAppBean bean;
         ArrayList<Apps> list = (ArrayList<Apps>) appsService.findAllByCostomerId(customerId);
@@ -272,4 +277,11 @@ public class CollectionProcessor implements ItemProcessor<CollectionItemReaderMo
         return date.getTime();
     }
 
+    public String filter(String str) {
+        if(StringUtils.isEmpty(str))return "";
+        String regEx = "[`~!@#$%^&*()\\-+={}':;,\\[\\].<>/?￥%…（）_+|【】‘；：”“’。，、？\\s]";
+        Pattern p = Pattern.compile(regEx);
+        Matcher m = p.matcher(str);
+        return m.replaceAll("").trim();
+    }
 }
